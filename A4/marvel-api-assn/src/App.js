@@ -9,36 +9,81 @@ import SeriesList from './components/SeriesList';
 import Series from './components/Series';
 import Navigation from './components/Navigation';
 import { useRoutes } from 'react-router-dom';
+import FourOFour from './components/FourOFour';
 const App = () => {
   let element = useRoutes([
     {
       path: '/',
-      element: [<Navigation />,<Home/>]
+      element: [<Home/>]
     },
     {
       path: 'characters',
-      // element: [<Navigation/>,<Characters/>],
       children: [
-        {path: 'page/:page', element: [<Navigation/>,<Characters/>]},
-        {path: ':id', element: [<Navigation/>, <Character/>]}
+        {
+          exact: true,
+          index: true,
+          element: [<Navigation/>,<FourOFour/>]
+        },
+        {
+          path: 'page/:page', element: [<Navigation/>,<Characters/>]
+        },
+        {
+          path: ':id',
+          element: [<Navigation/>, <Character/>],
+          children: [
+            {path:'comics', element: [<Navigation/>, <Comics/>]},
+            {path:'series', element: [<Navigation/>, <SeriesList/>]}
+          ]
+        }, {
+          path: '*',
+          element: [<Navigation/>,<FourOFour/>]
+        }
       ]
     },
     {
       path: 'comics',
-      // element: [<Navigation/>,<Comics/>]
       children: [
-        {path: 'page/:page', element: [<Navigation/>,<Comics/>]},
-        {path: ':id', element: [<Navigation/>, <Comic/>]}
+        {
+          exact: true,
+          index: true,
+          element: [<Navigation/>,<FourOFour/>]
+        },
+        {
+          path: 'page/:page',
+          element: [<Navigation/>,<Comics/>]
+        },
+        {
+          path: ':id',
+          // element: [<Navigation/>, <Comic/>],
+          children: [
+            {index: true, element: [<Navigation/>, <Comic/>]},
+            {path:'characters', element: [<Navigation/>, <Characters/>]},
+            {path:'series', element: [<Navigation/>, <SeriesList/>]}
+          ]
+        }, {
+          path: '*',
+          element: [<Navigation/>,<FourOFour/>]
+        }
       ]
     },
     {
       path: 'series',
-      // element: [<Navigation/>,<SeriesList/>]
       children: [
+        {exact: true, index: true, element: [<Navigation/>,<FourOFour/>]},
         {path: 'page/:page', element: [<Navigation/>,<SeriesList/>]},
-        {path: ':id', element: [<Navigation/>, <Series/>]}
+        {
+          path: ':id',
+          element: [<Navigation/>, <Series/>],
+          children: [
+            {path:'comics', element: [<Navigation/>, <Comics/>]},
+            {path:'characters', element: [<Navigation/>, <Characters/>]}
+          ]
+        }
       ]
-    }
+    },{
+      path: '*',
+      element: [<Navigation/>,<FourOFour/>]
+    },
   ])
   return element;
 }

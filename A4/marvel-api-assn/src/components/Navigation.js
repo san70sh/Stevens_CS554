@@ -5,7 +5,7 @@ const Navigation = () => {
     return (
         <div className="place-content-center bg-red-700 text-white">
             <div className="flex flex-col items-center py-2">
-                <Link to={"/"}>
+                <Link to={"/"} aria-label="Home">
                     <span className="icon--svg icon--svg mvl-animated-logo" aria-hidden="true">
                         <svg width="130" height="52" xmlns="http://www.w3.org/2000/svg">
                             <rect fill="#EC1D24" width="100%" height="100%"></rect>
@@ -18,13 +18,12 @@ const Navigation = () => {
             </div>
             <div className="flex flex-col items-center bg-red-800">
                 <div>
-                    <Link to={'/characters/page/0'}><button type="button" className="rounded-lg mx-9 py-2 px-7 font-semibold bg-red-900">Characters</button></Link>
-                    <Link to={"/comics/page/0"}><button type="button" className="rounded-lg mx-20 py-2 px-9 font-semibold bg-red-900">Comics</button></Link>
-                    <Link to={"/series/page/0"}><button type="button" className="rounded-lg mx-10 py-2 px-9 font-semibold bg-red-900">Series</button></Link>
+                    <Link to={'/characters/page/0'}><button type="button" className="mx-9 py-2 px-16 font-semibold font-mono bg-red-900  tracking-wider">CHARACTERS</button></Link>
+                    <Link to={"/comics/page/0"}><button type="button" className="mx-20 py-2 px-20 font-semibold  font-mono  tracking-wider bg-red-900">COMICS</button></Link>
+                    <Link to={"/series/page/0"}><button type="button" className="mx-10 py-2 px-20 font-semibold  font-mono tracking-wider bg-red-900">SERIES</button></Link>
                     
                 </div>
             </div>
-            
         </div>
     )    
   }

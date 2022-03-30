@@ -1,67 +1,120 @@
 import React, {useState, useEffect} from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import axios from "axios";
 import Pagination from "./Pagination";
+import loadingAni from '../images/loading.gif';
+import FourOFour from "./FourOFour";
+import SearchBox from "./SearchBox";
+
 
 const SeriesList = () => {
     const [loading, setLoading] = useState(true);
-    // const [searchTerm, setSearchTerm] = useState(undefined);
-    const [SeriesData, setSeriesData] = useState(undefined);
-    // const [searchData, setSearchData] = useState(undefined);
-    const [comOffset, setComOffset] = useState(0);
-    const [comLimit] = useState(20);
-    const [comTotal, setComTotal] = useState(0);
-    let comCard = null;
+    const [searchTerm, setSearchTerm] = useState(undefined);
+    const [seriesData, setSeriesData] = useState(undefined);
+    const [searchData, setSearchData] = useState(undefined);
+    const [seriesOffset, setSeriesOffset] = useState(0);
+    const [seriesLimit] = useState(20);
+    const [seriesTotal, setSeriesTotal] = useState(0);
+    const [invalidData, setInvalidData] = useState(false);
+    let seriesCard = null;
     let {page} = useParams();
+    
     useEffect(() => {
-        async function fetchSeries() {
+        async function fetchSearchData() {
             let url = null;
             try {
-                url = targetUrl(comOffset);
+                url = targetUrl(seriesOffset)+"&titleStartsWith="+searchTerm;
+                let {data} = await axios.get(url);
+                console.log("Data: "+data);
+                setLoading(false);
+                setSeriesOffset(seriesLimit*(parseInt(page)))
+                let searchResults = data.data;
+                let {results, total} = searchResults;
+                setSeriesTotal(total);
+                setSearchData(results);
+
+            } catch(e) {
+                console.log(e);
+            }
+        }
+        if(searchTerm) {
+            fetchSearchData();
+        }
+    }, [searchTerm, seriesLimit, seriesOffset, page])
+
+
+    useEffect(() => {
+        async function fetchSeries() {
+            try {
+                let url = null;
+                url = targetUrl(seriesOffset);
                 let {data} = await axios.get(url);
                 setLoading(false);
-                setComOffset(comLimit*(parseInt(page)));
+                setSeriesOffset(seriesLimit*(parseInt(page)));
                 let comData = data.data, code = data.code;
                 let {results, total} = comData;
-                setComTotal(total);
+                setSeriesTotal(total);
+                setSeriesData(results);
+                setInvalidData(false);
                 if(code === 404) {
-                    return null;
-                } else {
-                    setSeriesData(results);
+                    setInvalidData(true);
+                    setLoading(false);
                 }
             } catch (e) {
                 console.log(e);
             }
-
         }
-        fetchSeries();
-    }, [comLimit, comOffset, page])
 
-    if(SeriesData) {
-        comCard = SeriesData.map((Series) => {
-            return buildCard(Series);
+        if(!searchTerm || searchTerm.length === 0) {
+            fetchSeries();
+        }
+    }, [searchTerm, seriesLimit, seriesOffset, page])
+
+    const searchKey = async (value) => {
+        setSearchTerm(value);
+      };
+
+    if(searchTerm && searchData) {
+        seriesCard = searchData.map((series) => {
+            return buildCard(series);
+        })
+    } else if(!searchTerm && seriesData) {
+        seriesCard = seriesData.map((series) => {
+            return buildCard(series);
         })
     }
     if (loading) {
         return (
-            <div>
-                <p>loading...</p>
+            <div className="flex justify-center">
+                <img src={loadingAni} alt="Avenger Loading Animation" className="w-full h-full"></img>
             </div>
         )
-    } else {
-        return (
+    } else if(invalidData) {
+        return(
             <div>
+                <FourOFour/>
+            </div>
+        )
+    }
+     else {
+        return (
+            <div className="mx-5 mb-10">
+                <div className="my-5">
+                    <SearchBox searchKey = {searchKey} />
+                </div>
+            
                 <div>
                     <Pagination 
-                        charactersPerPage={comLimit}
-                        characterOffset = {comOffset}
-                        totalCharacters={comTotal}
+                        elementsPerPage={seriesLimit}
+                        elementOffset = {seriesOffset}
+                        totalElements={seriesTotal}
                         currentPage={parseInt(page)}
+                        api={'/series/page'}
                     />
 
                 </div>
                 <div className="mt-6 grid grid-cols-1 gap-y-10 gap-x-6 sm:grid-cols-3 lg:grid-cols-5 xl:gap-x-8">
-                    {comCard}
+                    {seriesCard}
                 </div>
             </div>
         )
@@ -88,20 +141,20 @@ const targetUrl = (SeriesOffset) => {
 const buildCard = (series) => {
     console.log('Cards built');
     return(
-        <div key={series.id} className="p-2">
-            <div className="w-full min-h-80 bg-gray-200 aspect-w-1 aspect-h-1 rounded-md overflow-hidden group-hover:opacity-75 lg:h-80 lg:aspect-none">
-                <img
-                    src={`${series.thumbnail.path}.${series.thumbnail.extension}`}
-                    alt={series.name}
-                    className="w-full h-full object-center object-cover lg:w-full lg:h-full"
-                />
-            </div>
-            <div className="mt-4 flex justify-between">
+        <Link to={`/series/${series.id}`}>
+            <div key={series.id} className="rounded-lg overflow-hidden hover:scale-105 space-x-6 transform transition duration-200 bg-red-200 border-red-600 border-2">
                 <div>
-                    <p>{series.description}</p>
+                    <img
+                        src={`${series.thumbnail.path}.${series.thumbnail.extension}`}
+                        alt={series.title}
+                        className="object-center h-full object-cover w-full lg:h-80"
+                    />
+                </div>
+                <div className="my-4 text-center">
+                    {series.title}
                 </div>
             </div>
-        </div>
+        </Link>
     )
 }
 

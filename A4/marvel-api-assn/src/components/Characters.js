@@ -2,63 +2,120 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
 import Pagination from "./Pagination";
-
+import { Link } from "react-router-dom";    
+import FourOFour from "./FourOFour";
+import loadingAni from "../images/loading.gif";
+import SearchBox from "./SearchBox";
 
 const Characters = () => {
     const [loading, setLoading] = useState(true);
-    // const [searchTerm, setSearchTerm] = useState(undefined);
+    const [invalidData, setInvalidData] = useState(false);
+    const [searchTerm, setSearchTerm] = useState(undefined);
     const [characterData, setCharacterData] = useState(undefined);
-    // const [searchData, setSearchData] = useState(undefined);
+    const [searchData, setSearchData] = useState(undefined);
     const [charOffset, setCharOffset] = useState(0);
     const [charLimit] = useState(20);
     const [charTotal, setCharTotal] = useState(0);
     let charCard = null;
     let {page} = useParams();
+
+
+    useEffect(() => {
+        async function fetchSearchData() {
+            let url = null;
+            try {
+                url = targetUrl(charOffset)+"&nameStartsWith="+searchTerm;
+                let {data} = await axios.get(url);
+                console.log("Data: "+data);
+                setLoading(false);
+                setCharOffset(charLimit*(parseInt(page)))
+                let searchResults = data.data;
+                let {results, total} = searchResults;
+                setCharTotal(total);
+                setSearchData(results);
+
+            } catch(e) {
+                console.log(e);
+            }
+        }
+        if(searchTerm) {
+            fetchSearchData();
+        }
+    }, [searchTerm, charLimit, charOffset, page])
+
+    
     useEffect(() => {
         async function fetchCharacters() {
             let url = null;
             try {
                 url = targetUrl(charOffset);
-                let {data} = await axios.get(url);
+                let {data, code} = await axios.get(url);
                 setLoading(false);
                 setCharOffset(charLimit*(parseInt(page)));
-                let charData = data.data, code = data.code;
+                let charData = data.data;
                 let {results, total} = charData;
+                setCharacterData(results);
+                setInvalidData(false);
                 setCharTotal(total);
                 if(code === 404) {
-                    return null;
-                } else {
-                    setCharacterData(results);
+                    setInvalidData(true);
+                    setLoading(false);
                 }
             } catch (e) {
                 console.log(e);
             }
-
+                
         }
-        fetchCharacters();
-    }, [charLimit, charOffset, page])
+        
+        // console.log(characterData);
+        if(!searchTerm || searchTerm.length === 0) {
+            fetchCharacters();
+        }
+    }, [charLimit, charOffset, page, searchTerm])
 
-    if(characterData) {
+    const searchKey = async (value) => {
+        setSearchTerm(value);
+      };
+
+    if(searchTerm && searchData) {
+        charCard = searchData.map((character) => {
+            return buildCard(character);
+        })
+    } else if(!searchTerm && characterData){
         charCard = characterData.map((character) => {
             return buildCard(character);
         })
     }
     if (loading) {
         return (
+            <div className="flex justify-center">
+                <img src={loadingAni} alt="Avenger Loading Animation" className="w-full h-full"></img>
+            </div>
+        )
+    } else if(invalidData) {
+        return(
             <div>
-                <p>loading...</p>
+                <FourOFour/>
             </div>
         )
     } else {
         return (
-            <div className="mt-6 grid grid-cols-1 gap-y-10 gap-x-6 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">
-                {charCard}
-                <Pagination 
-                    charactersPerPage={charLimit}
-                    characterOffset = {charOffset}
-                    totalCharacters={charTotal}
-                    currentPage={parseInt(page)}
-                />
+            <div className="mx-5 mb-10">
+                <div className="my-5">
+                    <SearchBox searchKey = {searchKey} />
+                </div>
+                <div>
+                    <Pagination 
+                        elementsPerPage={charLimit}
+                        elementOffset = {charOffset}
+                        totalElements={charTotal}
+                        currentPage={parseInt(page)}
+                        api={'/characters/page'}
+                        />
+                </div>
+                <div className="mt-6 grid grid-cols-1 gap-y-10 gap-x-6 sm:grid-cols-3 lg:grid-cols-5 xl:gap-x-8">
+                    {charCard}
+                </div>
             </div>
         )
     }
@@ -80,22 +137,21 @@ const targetUrl = (characterOffset) => {
 }
 
 const buildCard = (character) => {
-    console.log('Cards built');
     return(
-        <div key={character.id}>
-            <div className="w-full min-h-80 bg-gray-200 aspect-w-1 aspect-h-1 rounded-md overflow-hidden group-hover:opacity-75 lg:h-80 lg:aspect-none">
-                <img
-                    src={`${character.thumbnail.path}.${character.thumbnail.extension}`}
-                    alt={character.name}
-                    className="w-full h-full object-center object-cover lg:w-full lg:h-full"
-                />
-            </div>
-            <div className="mt-4 flex justify-between">
+        <Link to={`/characters/${character.id}`} aria-label={character.name}>
+            <div key={character.id} className="rounded-lg overflow-hidden hover:scale-105 space-x-6 transform transition duration-200 bg-red-200 border-red-600 border-2">
                 <div>
-                    <p>{character.description}</p>
+                    <img
+                        src={`${character.thumbnail.path}.${character.thumbnail.extension}`}
+                        alt={character.name}
+                        className="object-center h-full object-cover w-full lg:h-80"
+                    />
+                </div>
+                <div className="my-4 text-center">
+                    {character.name}
                 </div>
             </div>
-        </div>
+        </Link>
     )
 }
 
